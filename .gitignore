@@ -1,0 +1,9 @@
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+*.iml
+.terraform
+*.zip
+certs/
+*.pkg
+.DS_Store*
