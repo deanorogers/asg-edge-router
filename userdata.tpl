@@ -2,25 +2,39 @@
 
 yum update -y
 amazon-linux-extras enable nginx1
-yum install -y nginx
+# yum install -y nginx
+yum-config-manager --add-repo https://openresty.org/package/amazon/openresty.repo
+yum install -y openresty
+systemctl start openresty
+systemctl enable openresty
+openresty -V
 
-cat <<'EOF_CONFIG' > /etc/nginx/conf.d/default.conf
+#cat <<'EOF_CONFIG' > /etc/nginx/conf.d/default.conf
+cat <<'EOF_CONFIG' > /usr/local/openresty/nginx/conf/nginx.conf
 
-  log_format basic '$remote_addr - $remote_user [$time_local] "$request" '
-                        '$status $body_bytes_sent "$http_referer" '
-                        '$status $body_bytes_sent "$http_referer" '
-                        '"$http_user_agent" "$http_x_forwarded_for" "http_x_response_code=$sent_http_x_response_code"';
+  events {
+      worker_connections 1024;
+  }
 
-   access_log /var/log/nginx/access.log basic;
+  http {
+      log_format basic '$remote_addr - $remote_user [$time_local] "$request" '
+                       '$status $body_bytes_sent "$http_referer" '
+                       '"$http_user_agent" "$http_x_forwarded_for" "http_x_response_code=$sent_http_x_response_code"';
 
-   server {
-        listen 8080;
+      access_log /usr/local/openresty/nginx/logs/access.log basic;
 
-        location /salutation {
-            add_header Content-Type text/plain;
-            return 200 'Hello, World from $hostname \n';
-        }
-    }
+      server {
+          listen 8080;
+
+          location /salutation {
+              default_type text/plain;
+              content_by_lua_block {
+                  ngx.sleep(0.5)
+                  ngx.say("Hello, World from " .. ngx.var.hostname)
+              }
+          }
+      }
+  }
 EOF_CONFIG
 
 systemctl start nginx

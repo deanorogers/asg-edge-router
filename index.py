@@ -89,16 +89,17 @@ def commence_refresh ():
     response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[ASG_NAME])
     asg = response['AutoScalingGroups'][0]
     current_desired = asg['DesiredCapacity']
-    current_min = asg['MinSize']
+    # current_min = asg['MinSize']
     current_max = asg['MaxSize']
     new_desired = current_desired + 1
-    new_min = max(current_min, new_desired)
-    new_max = max(current_max, new_desired)
+    # new_min = max(current_min, new_desired)
+    # new_max = max(current_max, new_desired)
+    new_max = current_max + 1
     logger.info(f"Increasing desired capacity from {current_desired} to {new_desired}")
     asg_client.update_auto_scaling_group(
         AutoScalingGroupName=ASG_NAME,
         DesiredCapacity=new_desired,
-        MinSize=new_min,
+        # MinSize=new_min,
         MaxSize=new_max
     )
 
@@ -134,16 +135,17 @@ def continue_refresh ():
     response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[ASG_NAME])
     asg = response['AutoScalingGroups'][0]
     current_desired = asg['DesiredCapacity']
-    current_min = asg['MinSize']
+    # current_min = asg['MinSize']
     current_max = asg['MaxSize']
     new_desired = current_desired - 1
-    new_min = min(current_min, new_desired)
-    new_max = min(current_max, new_desired)
+    # new_min = min(current_min, new_desired)
+    # new_max = min(current_max, new_desired)
+    new_max = current_max -1
     logger.info(f"Resetting desired capacity from {current_desired} to {new_desired}")
     asg_client.update_auto_scaling_group(
         AutoScalingGroupName=ASG_NAME,
         DesiredCapacity=new_desired,
-        MinSize=new_min,
+        # MinSize=new_min,
         MaxSize=new_max
     )
 
