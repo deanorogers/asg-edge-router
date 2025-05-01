@@ -5,8 +5,6 @@ amazon-linux-extras enable nginx1
 # yum install -y nginx
 yum-config-manager --add-repo https://openresty.org/package/amazon/openresty.repo
 yum install -y openresty
-systemctl start openresty
-systemctl enable openresty
 openresty -V
 
 #cat <<'EOF_CONFIG' > /etc/nginx/conf.d/default.conf
@@ -37,4 +35,5 @@ cat <<'EOF_CONFIG' > /usr/local/openresty/nginx/conf/nginx.conf
   }
 EOF_CONFIG
 
-systemctl start nginx
+systemctl enable openresty
+systemctl start openresty
