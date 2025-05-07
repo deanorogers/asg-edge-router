@@ -61,14 +61,14 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 data "archive_file" "zip_index" {
   type        = "zip"
-  source_file = "index.py"            # Path to your index.py file
+  source_file = "lambda_functions/custom_asg_refresh/src/main.py"            # Path to your index.py file
   output_path = "lambda_function.zip" # Path for the zip output
 }
 
 resource "aws_lambda_function" "asg_refresh_lambda" {
   function_name = "asg_refresh_lambda"
   role          = aws_iam_role.lambda_role.arn
-  handler       = "index.handler"
+  handler       = "main.handler"
   runtime       = "python3.8"
 
   # Inline Python code

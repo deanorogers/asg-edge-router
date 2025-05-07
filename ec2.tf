@@ -66,9 +66,9 @@ resource "aws_launch_template" "launch_template" {
 
 resource "aws_autoscaling_group" "asg" {
   name             = "nginx_asg"
-  max_size         = 0
+  max_size         = 4
   min_size         = 0
-  desired_capacity = 0
+  desired_capacity = 2
   #  vpc_zone_identifier = [aws_subnet.subnet1.id, aws_subnet.subnet2.id, aws_subnet.subnet3.id]
   vpc_zone_identifier = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
   launch_template {

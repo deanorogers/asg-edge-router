@@ -1,3 +1,37 @@
+
+resource "aws_s3_bucket" "alb_access_logs_bucket" {
+  bucket        = "dev-unified-my-access-logs-b"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_policy" "alb_access_logs_bucket" {
+
+  bucket = aws_s3_bucket.alb_access_logs_bucket.bucket
+  policy = <<-POLICY
+  {
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowELBAccessOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "logdelivery.elasticloadbalancing.amazonaws.com"
+      },
+      "Action": "s3:*",
+      "Resource": "arn:aws:s3:::dev-unified-my-access-logs-b/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "107404535822"
+        }
+      }
+    }
+  ]
+  }
+  POLICY
+}
+
+
+
 resource "aws_lb" "nginx-alb" {
   name                       = "nginx-alb"
   internal                   = false
@@ -5,6 +39,12 @@ resource "aws_lb" "nginx-alb" {
   security_groups            = [aws_security_group.router-alb-sg.id]
   enable_deletion_protection = false
   subnets                    = [aws_subnet.subnet1.id, aws_subnet.subnet2.id, aws_subnet.subnet3.id]
+
+  access_logs {
+    bucket  = aws_s3_bucket.alb_access_logs_bucket.bucket
+    prefix  = "nginx-alb"
+    enabled = true
+  }
 
   tags = local.common_tags
 }
