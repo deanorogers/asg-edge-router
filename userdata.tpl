@@ -27,7 +27,7 @@ cat <<'EOF_CONFIG' > /usr/local/openresty/nginx/conf/nginx.conf
           location /salutation {
               default_type text/plain;
               content_by_lua_block {
-                  ngx.sleep(0.5)
+                  ngx.sleep(0.05)
                   ngx.say("Hello, World from " .. ngx.var.hostname)
               }
           }

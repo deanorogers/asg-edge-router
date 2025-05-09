@@ -12,7 +12,7 @@ num_threads=$2
 # Function to run curl in parallel
 download() {
   for ((i=0; i<num_requests / num_threads; i++)); do
-    response=$(curl -s http://nginx-alb-782537157.us-east-1.elb.amazonaws.com:8080/salutation)
+    response=$(curl -s http://nginx-alb-551814795.us-east-1.elb.amazonaws.com:8080/salutation)
     echo "Response: $response"
   done
 }
