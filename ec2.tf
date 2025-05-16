@@ -17,11 +17,11 @@ resource "aws_security_group" "nginx_security_group" {
 
   # direct to allow smoke testing test
   ingress {
-    description     = "HTTP from Client for smoke testing"
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    cidr_blocks     = [var.local_ip]
+    description = "HTTP from Client for smoke testing"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [var.local_ip]
   }
 
   # needed by yum

@@ -24,6 +24,26 @@ resource "aws_s3_bucket_policy" "alb_access_logs_bucket" {
           "aws:SourceAccount": "107404535822"
         }
       }
+    },
+    {
+      "Sid": "AllowGlueReadAccess",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "glue.amazonaws.com"
+      },
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dev-unified-my-access-logs-b",
+        "arn:aws:s3:::dev-unified-my-access-logs-b/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "107404535822"
+        }
+      }
     }
   ]
   }
@@ -105,12 +125,12 @@ resource "aws_lb_target_group" "edge_tg" {
   health_check {
     path                = "/salutation"
     protocol            = "HTTP"
-    port                = "traffic-port"  # Uses the same port as the target group
-    interval            = 30              # Health check interval in seconds
-    timeout             = 5               # Time before marking as failed
-    healthy_threshold   = 3               # Number of successful checks before healthy
-    unhealthy_threshold = 3               # Number of failed checks before unhealthy
-    matcher             = "200-299"       # Expected HTTP response code range
+    port                = "traffic-port" # Uses the same port as the target group
+    interval            = 30             # Health check interval in seconds
+    timeout             = 5              # Time before marking as failed
+    healthy_threshold   = 3              # Number of successful checks before healthy
+    unhealthy_threshold = 3              # Number of failed checks before unhealthy
+    matcher             = "200-299"      # Expected HTTP response code range
   }
 
   vpc_id = aws_vpc.main.id

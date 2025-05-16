@@ -61,8 +61,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 data "archive_file" "zip_index" {
   type        = "zip"
-  source_file = "lambda_functions/custom_asg_refresh/src/main.py"            # Path to your index.py file
-  output_path = "lambda_function.zip" # Path for the zip output
+  source_file = "lambda_functions/custom_asg_refresh/src/main.py" # Path to your index.py file
+  output_path = "lambda_function.zip"                             # Path for the zip output
 }
 
 resource "aws_lambda_function" "asg_refresh_lambda" {
@@ -78,8 +78,8 @@ resource "aws_lambda_function" "asg_refresh_lambda" {
 
   environment {
     variables = {
-      ASG_NAME = aws_autoscaling_group.asg.name
-      MIN_HEALTHY_PERCENT = 80
+      ASG_NAME             = aws_autoscaling_group.asg.name
+      MIN_HEALTHY_PERCENT  = 80
       INSTANCE_WARM_UP_SEC = 30
     }
   }
