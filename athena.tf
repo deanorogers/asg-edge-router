@@ -6,11 +6,14 @@ resource "aws_s3_bucket" "alb_access_logs_athena_results" {
 resource "aws_athena_workgroup" "alb_logs_workgroup" {
   name = "alb_logs_workgroup"
 
-  #  configuration {
-  #    result_configuration {
-  #      output_location = "s3://${aws_s3_bucket.alb_access_logs_athena_results.bucket}/athena-results/"
-  #    }
-  #  }
+  force_destroy = true
+
+  configuration {
+    result_configuration {
+      output_location = "s3://${aws_s3_bucket.alb_access_logs_athena_results.bucket}/athena-results/"
+    }
+  }
+
   depends_on = [aws_s3_bucket.alb_access_logs_athena_results]
 }
 
@@ -76,7 +79,7 @@ EOT
 
 # Classifier Grok-pattern based
 resource "aws_glue_classifier" "athena_alb_partitioned_classifier" {
-  name = "athena_alb_partitioned_classifier"
+  name   = "athena_alb_partitioned_classifier"
 
   grok_classifier {
     classification = "alb-logs"
@@ -89,7 +92,7 @@ resource "aws_glue_classifier" "athena_alb_partitioned_classifier" {
 }
 
 resource "aws_glue_catalog_database" "athena_alb_partitioned_database" {
-  name = "athena_alb_partitioned_database"
+  name   = "athena_alb_partitioned_database"
 }
 
 resource "aws_glue_crawler" "athena_alb_partitioned_crawler" {
@@ -99,7 +102,7 @@ resource "aws_glue_crawler" "athena_alb_partitioned_crawler" {
   table_prefix  = "athena_alb_partitioned_"
 
   recrawl_policy {
-    recrawl_behavior = "CRAWL_NEW_FOLDERS_ONLY" # Options: CRAWL_EVERYTHING | CRAWL_NEW_FOLDERS_ONLY | CRAWL_EVENT_MODE
+    recrawl_behavior = "CRAWL_EVERYTHING" # Options: CRAWL_EVERYTHING | CRAWL_NEW_FOLDERS_ONLY | CRAWL_EVENT_MODE
   }
 
   schema_change_policy {

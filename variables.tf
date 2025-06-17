@@ -25,3 +25,13 @@ variable "map_public_ip_on_launch" {
 variable "local_ip" {
   type = string
 }
+
+variable "instance_type_2" {
+  type = string
+  default = "t2.small"
+}
+
+variable "enable_pca" {
+  type = bool
+  default = true
+}

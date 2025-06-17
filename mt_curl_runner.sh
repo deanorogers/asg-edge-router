@@ -11,15 +11,25 @@ num_threads=$2
 
 # Function to run curl in parallel
 download() {
-  for ((i=0; i<num_requests / num_threads; i++)); do
-    response=$(curl -s http://nginx-alb-551814795.us-east-1.elb.amazonaws.com:8080/salutation)
-    echo "Response: $response"
-  done
+  local thread_id=$1
+    for ((i = 0; i < num_requests / num_threads; i++)); do
+      tmpfile=$(mktemp "/tmp/response_${thread_id}_${i}_XXXXXX")
+
+      response=$(curl -s -w "%{time_total}" -o "$tmpfile" http://nginx-alb-800057866.us-east-1.elb.amazonaws.com:8080/salutation)
+      time_taken="$response"
+      body=$(< "$tmpfile")
+      rm -f "$tmpfile"
+      echo "Thread $thread_id | Time: ${time_taken}s | Response: $body"
+      sleep 0.5
+      #      sleep_time=$(echo "scale=3; $RANDOM/32767" | bc)
+      #      echo "Sleep time ${sleep_time}"
+      #      sleep "$sleep_time"    sleep "$sleep_time"
+    done
 }
 
 # Run the function in parallel
-for ((t=0; t<num_threads; t++)); do
-  download &
+for ((t = 0; t < num_threads; t++)); do
+  download "$t" &
 done
 
 # Wait for all background jobs to complete

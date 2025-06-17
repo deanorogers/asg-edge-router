@@ -44,6 +44,10 @@ resource "aws_launch_template" "launch_template" {
   image_id      = "ami-02f624c08a83ca16f" ## Amazon linux 2
   instance_type = "t2.micro"
 
+  monitoring {
+    enabled = true
+  }
+
   network_interfaces {
     device_index    = 0
     security_groups = [aws_security_group.nginx_security_group.id]
@@ -59,6 +63,14 @@ resource "aws_launch_template" "launch_template" {
     name = "ec2_instance_profile"
   }
 
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "united-edge-router"
+    }
+  }
+
   tags = {
     Name = "asg-ec2-template"
   }
@@ -66,11 +78,35 @@ resource "aws_launch_template" "launch_template" {
 
 resource "aws_autoscaling_group" "asg" {
   name             = "nginx_asg"
-  max_size         = 4
-  min_size         = 0
+  max_size         = 3
+  min_size         = 1
   desired_capacity = 2
+#  max_size         = 0
+#  min_size         = 0
+#  desired_capacity = 0
   #  vpc_zone_identifier = [aws_subnet.subnet1.id, aws_subnet.subnet2.id, aws_subnet.subnet3.id]
   vpc_zone_identifier = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
+
+#  mixed_instances_policy {
+#    launch_template {
+#      launch_template_specification {
+#        launch_template_name = aws_launch_template.launch_template.name
+#        version = "$Latest"
+#      }
+#
+#      override {
+#        instance_type     = "t2.micro"
+#        weighted_capacity = "100"
+#      }
+#
+#      override {
+#        instance_type     = "t2.small"
+#        weighted_capacity = "100"
+#      }
+#    }
+#
+#  }
+
   launch_template {
     name    = aws_launch_template.launch_template.name
     version = "$Latest"
@@ -105,3 +141,48 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
   name = "ec2_instance_profile"
   role = aws_iam_role.ec2_assume_role.name
 }
+
+resource "aws_cloudwatch_metric_alarm" "scale_out_alarm" {
+  alarm_name          = "scale-out-alarm-at-70"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 30
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "Alarm to scale out when CPU exceeds 70%"
+  alarm_actions       = [aws_autoscaling_policy.scale_out_policy.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.asg.name
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_out_policy" {
+  name = "scale-out-policy"
+  scaling_adjustment = 1
+  adjustment_type = "ChangeInCapacity"
+  autoscaling_group_name = aws_autoscaling_group.asg.name
+}
+
+## reduce
+#resource "aws_cloudwatch_metric_alarm" "scale_in_alarm" {
+#  alarm_name          = "scale-in-alarm-at-30"
+#  comparison_operator = "LessThanThreshold"
+#  evaluation_periods  = 3
+#  metric_name         = "CPUUtilization"
+#  namespace           = "AWS/AutoScaling"
+#  period              = 300
+#  statistic           = "Average"
+#  threshold           = 30
+#  alarm_description   = "Alarm to scale in when CPU drops below 30%"
+#  alarm_actions       = [aws_autoscaling_policy.scale_in_policy.arn]
+#}
+#
+#resource "aws_autoscaling_policy" "scale_in_policy" {
+#  name                   = "scale-in-policy"
+#  scaling_adjustment     = -1
+#  adjustment_type        = "ChangeInCapacity"
+#  autoscaling_group_name = aws_autoscaling_group.asg.name
+#}
