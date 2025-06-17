@@ -100,9 +100,9 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
           "ssm:SendCommand",
           "ec2:DescribeInstances",
           "ec2:DescribeInstanceStatus",
-          "ec2:RebootInstances",
-          "ec2:StopInstances",
-          "ec2:TerminateInstances",
+#          "ec2:RebootInstances",
+#          "ec2:StopInstances",
+#          "ec2:TerminateInstances",
           "fis:StartExperiment",
           "fis:StopExperiment",
           "logs:CreateLogGroup",
@@ -114,26 +114,16 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
         ]
         Effect   = "Allow"
         Resource = "*"
-      },
-      {
-        Action = [
-          "fis:*"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-      {
-      Action = [
-        "tag:GetResources",
-        "tag:TagResources",
-        "logs:DescribeLogGroups",
-        "logs:DescribeLogStreams",
-        "logs:GetLogEvents",
-        "cloudwatch:PutMetricData"
-      ]
-      Effect   = "Allow"
-      Resource = "*"
       }
+#    ,
+#      {
+#        Action = [
+#          "fis:*"
+#        ]
+#        Effect   = "Allow"
+#        Resource = "*"
+#      }
     ]
-  })
+  }
+      )
 }

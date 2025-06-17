@@ -15,7 +15,7 @@ download() {
     for ((i = 0; i < num_requests / num_threads; i++)); do
       tmpfile=$(mktemp "/tmp/response_${thread_id}_${i}_XXXXXX")
 
-      response=$(curl -s -w "%{time_total}" -o "$tmpfile" http://nginx-alb-800057866.us-east-1.elb.amazonaws.com:8080/salutation)
+      response=$(curl -s -w "%{time_total}" -o "$tmpfile" http://nginx-alb-1986895030.us-east-1.elb.amazonaws.com:8080/salutation)
       time_taken="$response"
       body=$(< "$tmpfile")
       rm -f "$tmpfile"
