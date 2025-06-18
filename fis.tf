@@ -5,16 +5,17 @@ resource "aws_cloudwatch_log_group" "fis_cw_log_group" {
 }
 
 resource "aws_fis_experiment_template" "ec2_cpu_80" {
+
   description = "Inject 80% CPU load on all tagged EC2 instances"
   role_arn    = aws_iam_role.lambda_fis_role.arn
 
-#  log_configuration {
-#    log_schema_version = 2
-#
-#    cloudwatch_logs_configuration {
-#      log_group_arn = "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
-#    }
-#  }
+  log_configuration {
+    log_schema_version = 2
+
+    cloudwatch_logs_configuration {
+      log_group_arn = "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
+    }
+  }
 
   stop_condition {
     source = "none"
@@ -63,6 +64,8 @@ resource "aws_fis_experiment_template" "ec2_cpu_80" {
       value = "united-edge-router"
     }
   }
+
+  tags = merge(local.common_tags, {Name = "ec2_cpu_load"})
 }
 
 resource "aws_iam_role" "lambda_fis_role" {
@@ -83,6 +86,34 @@ resource "aws_iam_role" "lambda_fis_role" {
     Project     = "ASG"
   }
 }
+
+resource "aws_cloudwatch_log_resource_policy" "fis_log_delivery_policy" {
+  policy_name = "FISLogDeliveryPolicy"
+
+  policy_document = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "AllowFISDeliveryLogs",
+        Effect    = "Allow",
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        },
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.fis_cw_log_group.name}:*",
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
+      }
+    ]
+  })
+}
+
 
 resource "aws_iam_role_policy" "lambda_fis_policy" {
   name   = "lambda_policy"
@@ -109,12 +140,28 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:DescribeLogGroups",
+          "logs:CreateLogDelivery",
           "logs:DescribeLogStreams",
           "cloudwatch:DescribeAlarms"
         ]
         Effect   = "Allow"
         Resource = "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+          "logs:CreateLogDelivery"
+        ],
+        "Resource": [
+          "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
+        ]
       }
+
 #    ,
 #      {
 #        Action = [
