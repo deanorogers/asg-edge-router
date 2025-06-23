@@ -37,7 +37,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "ec2:ModifyLaunchTemplate",
           "ec2:CreateLaunchTemplateVersion",
           "acm-pca:*",
-          "acm:*"
+          "acm:*",
+          "fis:*"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -188,4 +189,33 @@ resource "aws_lambda_function" "create_secret_object" {
     Project     = "create_secret_object"
   }
   depends_on = [data.archive_file.create_secret_object_zip_index]
+}
+
+#############################################################
+# Function for adding multiple accounts to FIS experiment
+#############################################################
+
+data "archive_file" "multi_account_fis_zip_index" {
+  type        = "zip"
+  source_file = "lambda_functions/enable_multi_account_fis/src/main.py" # Path to your index.py file
+  output_path = "lambda_function_enable_multi_account_fis.zip"                     # Path for the zip output
+}
+
+resource "aws_lambda_function" "multi_account_fis_zip_index" {
+  function_name = "multi_account_fis_zip_index"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "main.handler"
+  runtime       = "python3.8"
+  timeout       = 20
+
+  # Inline Python code
+  #source_code_hash = filebase64sha256("lambda_function.zip")
+  source_code_hash = data.archive_file.multi_account_fis_zip_index.output_base64sha256
+  filename         = data.archive_file.multi_account_fis_zip_index.output_path
+
+  tags = {
+    Environment = "dev"
+    Project     = "enable_multi_account_fis"
+  }
+  depends_on = [data.archive_file.multi_account_fis_zip_index]
 }

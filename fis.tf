@@ -6,6 +6,8 @@ resource "aws_cloudwatch_log_group" "fis_cw_log_group" {
 
 resource "aws_fis_experiment_template" "ec2_cpu_80" {
 
+#  count = 0
+
   description = "Inject 80% CPU load on all tagged EC2 instances"
   role_arn    = aws_iam_role.lambda_fis_role.arn
 
@@ -63,6 +65,10 @@ resource "aws_fis_experiment_template" "ec2_cpu_80" {
       key   = "Name"
       value = "united-edge-router"
     }
+  }
+
+  experiment_options {
+    account_targeting = "multi-account"
   }
 
   tags = merge(local.common_tags, {Name = "ec2_cpu_load"})
@@ -134,8 +140,8 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
 #          "ec2:RebootInstances",
 #          "ec2:StopInstances",
 #          "ec2:TerminateInstances",
-          "fis:StartExperiment",
-          "fis:StopExperiment",
+#          "fis:StartExperiment",
+#          "fis:StopExperiment",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
