@@ -35,3 +35,8 @@ variable "enable_pca" {
   type = bool
   default = true
 }
+
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}

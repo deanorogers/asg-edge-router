@@ -4,74 +4,13 @@ resource "aws_cloudwatch_log_group" "fis_cw_log_group" {
   retention_in_days = 1
 }
 
-resource "aws_fis_experiment_template" "ec2_cpu_80" {
+module "ec2_stress_cpu" {
+  count = 1
 
-#  count = 0
+  source = "./ec2_stress_cpu"
 
-  description = "Inject 80% CPU load on all tagged EC2 instances"
-  role_arn    = aws_iam_role.lambda_fis_role.arn
-
-  log_configuration {
-    log_schema_version = 2
-
-    cloudwatch_logs_configuration {
-      log_group_arn = "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
-    }
-  }
-
-  stop_condition {
-    source = "none"
-  }
-
-  action {
-    name      = "cpu-stress"
-    action_id = "aws:ssm:send-command"
-
-    parameter {
-      key   = "documentArn"
-      value = "arn:aws:ssm:us-east-1::document/AWSFIS-Run-CPU-Stress"
-    }
-
-    parameter {
-      key   = "duration"
-      value = "PT5M"
-    }
-
-    parameter {
-      key   = "documentParameters"
-      value = "{\"DurationSeconds\":\"180\", \"CPU\":\"0\", \"LoadPercent\":\"90\"}"
-    }
-
-    target {
-      key   = "Instances"
-      value = "fis-enabled-target"
-    }
-  }
-
-  target {
-    name           = "fis-enabled-target"
-    resource_type  = "aws:ec2:instance"
-#    resource_type  = "aws:ec2:autoscaling-group"
-    selection_mode = "ALL"
-#    resource_arns = [
-#      aws_autoscaling_group.asg.arn
-#    ]
-#    count          = 1
-#    parameters = {
-#      "tag:Name" = "united-edge-router"
-#      "count"    = "1"
-#    }
-    resource_tag {
-      key   = "Name"
-      value = "united-edge-router"
-    }
-  }
-
-  experiment_options {
-    account_targeting = "multi-account"
-  }
-
-  tags = merge(local.common_tags, {Name = "ec2_cpu_load"})
+  cw_log_arn = aws_cloudwatch_log_group.fis_cw_log_group.arn
+  fis_role_arn = aws_iam_role.lambda_fis_role.arn
 }
 
 resource "aws_iam_role" "lambda_fis_role" {
@@ -120,7 +59,6 @@ resource "aws_cloudwatch_log_resource_policy" "fis_log_delivery_policy" {
   })
 }
 
-
 resource "aws_iam_role_policy" "lambda_fis_policy" {
   name   = "lambda_policy"
   role   = aws_iam_role.lambda_fis_role.id
@@ -137,18 +75,20 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
           "ssm:SendCommand",
           "ec2:DescribeInstances",
           "ec2:DescribeInstanceStatus",
-#          "ec2:RebootInstances",
-#          "ec2:StopInstances",
-#          "ec2:TerminateInstances",
-#          "fis:StartExperiment",
-#          "fis:StopExperiment",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:CreateLogDelivery",
-          "logs:DescribeLogStreams",
           "cloudwatch:DescribeAlarms"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "arn:aws:fis:${var.region}:${data.aws_caller_identity.current.account_id}:experiment-template/*",
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ssm:${var.region}::document/AWSFIS-Run-CPU-Stress"
+#          "arn:aws:ssm:us-east-1::document/AWS-RunShellScript"
+        ]
+      },
+      {
+        Action = [
+          "ssm:ListCommands",
+          "ssm:ListCommandInvocations"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -164,19 +104,90 @@ resource "aws_iam_role_policy" "lambda_fis_policy" {
           "logs:CreateLogDelivery"
         ],
         "Resource": [
-          "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
+          "*"
+#          "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*"
         ]
       }
-
-#    ,
-#      {
-#        Action = [
-#          "fis:*"
-#        ]
-#        Effect   = "Allow"
-#        Resource = "*"
-#      }
     ]
   }
-      )
+  )
 }
+
+#resource "aws_iam_role_policy" "lambda_fis_policy" {
+#  name   = "lambda_policy"
+#  role   = aws_iam_role.lambda_fis_role.id
+#  policy = jsonencode({
+#    Version   = "2012-10-17"
+#    Statement = [
+#      {
+#        Action = [
+#          "ssm:GetParameter",
+#          "ssm:DescribeParameters",
+#          "ssm:GetParameters",
+#          "ssm:ListCommands",
+#          "ssm:ListCommandInvocations",
+#          "ssm:SendCommand",
+#          "ssm:GetCommandInvocation",
+#          "ssm:DescribeInstanceInformation",
+#          "ec2:DescribeInstances",
+#          "ec2:DescribeInstanceStatus",
+##          "ec2:RebootInstances",
+##          "ec2:StopInstances",
+##          "ec2:TerminateInstances",
+##          "fis:StartExperiment",
+##          "fis:StopExperiment",
+#          "logs:CreateLogGroup",
+#          "logs:CreateLogStream",
+#          "logs:PutLogEvents",
+#          "logs:DescribeLogGroups",
+#          "logs:CreateLogDelivery",
+#          "logs:DescribeLogStreams",
+#          "cloudwatch:DescribeAlarms",
+#          "ssm:GetDocument",
+#          "ssm:DescribeDocument"
+#        ]
+#        Effect   = "Allow"
+#        Resource = [
+#          "arn:aws:fis:${var.region}:${data.aws_caller_identity.current.account_id}:experiment-template/*",
+#          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*",
+#          "arn:aws:ssm:${var.region}::document/AWSFIS-Run-CPU-Stress",
+#          "arn:aws:ssm:us-east-1::document/AWS-RunShellScript"
+#        ]
+#      },
+#      {
+#        "Effect": "Allow",
+#        "Action": [
+#          "ssm:ListCommands"
+#        ]
+#        Resource = [
+#          "arn:aws:ssm:${var.region}::document/*"
+#        ]
+#      },
+#      {
+#        "Effect": "Allow",
+#        "Action": [
+#          "logs:CreateLogGroup",
+#          "logs:CreateLogStream",
+#          "logs:PutLogEvents",
+#          "logs:DescribeLogStreams",
+#          "logs:DescribeLogGroups",
+#          "logs:CreateLogDelivery"
+#        ],
+#        "Resource": [
+##          "${aws_cloudwatch_log_group.fis_cw_log_group.arn}:*",
+#          "*"
+#        ]
+#      }
+#
+##    ,
+##      {
+##        Action = [
+##          "fis:*"
+##        ]
+##        Effect   = "Allow"
+##        Resource = "*"
+##      }
+#    ]
+#  }
+#      )
+#}
